@@ -566,7 +566,7 @@ function renderNews() {
   const list = document.getElementById('newsList');
   list.innerHTML = hotel.news.map((n, idx) => `
     <article class="news-item py-6 flex gap-5 cursor-pointer group" onclick="openArticle(${idx})">
-      <div class="shrink-0 rounded-xl overflow-hidden" style="width:168px;aspect-ratio:413/300">
+      <div class="shrink-0 rounded-xl overflow-hidden" style="width:413px;aspect-ratio:413/300">
         <img src="${esc(n.img || n.image || '')}" alt=""
              class="w-full h-full object-cover group-hover:opacity-90 transition" />
       </div>
