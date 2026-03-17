@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>飯店簡介 - HotelHR 旅宿人才</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #CC0000;
+      --red-dark: #A80000;
+      --red-light: #FFE5E5;
+    }
+    body { font-family: 'Noto Sans TC', sans-serif; }
+
+    /* ── Sub-nav active underline ── */
+    .subnav-item {
+      position: relative;
+      padding-bottom: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 12px 16px;
+      white-space: nowrap;
+      color: #555;
+      transition: color .15s;
+    }
+    .subnav-item:hover { color: #111; }
+    .subnav-item.active {
+      color: var(--red);
+      font-weight: 700;
+    }
+    .subnav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--red);
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* ── Hero carousel ── */
+    .carousel-track { display: flex; transition: transform 0.45s cubic-bezier(.25,.8,.25,1); }
+    .carousel-slide  { min-width: 100%; position: relative; }
+
+    /* ── Hero overlay gradient ── */
+    .hero-overlay {
+      background: linear-gradient(
+        to right,
+        rgba(0,0,0,.55) 0%,
+        rgba(0,0,0,.35) 45%,
+        rgba(0,0,0,.0)  100%
+      );
+    }
+
+    /* ── Section title ── */
+    .sec-title    { font-size: 1.25rem; font-weight: 700; color: #222; line-height: 1.3; }
+    .sec-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; letter-spacing: .03em; }
+
+    /* ── Product card ── */
+    .product-card:hover .product-img { transform: scale(1.05); }
+
+    /* ── News item ── */
+    .news-item { border-bottom: 1px solid #f0f0f0; }
+    .news-item:last-child { border-bottom: none; }
+
+    /* ── Pagination dot ── */
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; cursor: pointer; transition: background .2s; }
+    .dot.active { background: var(--red); }
+
+    /* ── Badge ── */
+    .badge-line {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--red); color: #fff;
+      font-size: 0.78rem; font-weight: 700;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      text-decoration: none; white-space: nowrap;
+    }
+    .badge-fb {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #1877F2; color: #fff; cursor: pointer;
+      transition: opacity .2s;
+    }
+    .badge-fb:hover { opacity: .85; }
+    .badge-ig {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 110%, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      color: #fff; cursor: pointer; transition: opacity .2s;
+    }
+    .badge-ig:hover { opacity: .85; }
+
+    /* ── Hours open ── */
+    .hours-open { color: var(--red); }
+
+    /* ── Hero badge pill ── */
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.55);
+      color: #fff;
+      font-size: 0.78rem; font-weight: 600;
+      padding: 5px 14px; border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── Pagination ── */
+    .page-btn {
+      width: 32px; height: 32px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; cursor: pointer; transition: background .15s;
+      color: #555;
+    }
+    .page-btn:hover { background: #f5f5f5; }
+    .page-btn.active { background: var(--red); color: #fff; font-weight: 700; }
+
+    /* ── Modal / Lightbox overlay ── */
+    .fp-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0; visibility: hidden;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+    .fp-overlay.open { opacity: 1; visibility: visible; }
+
+    /* ── Shared modal box ── */
+    .fp-box {
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      transform: translateY(24px) scale(.96);
+      transition: transform .32s cubic-bezier(.22,.8,.3,1);
+    }
+    .fp-overlay.open .fp-box { transform: translateY(0) scale(1); }
+
+    /* ── Close button ── */
+    .fp-close {
+      position: absolute; top: 10px; right: 10px; z-index: 20;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(0,0,0,.45); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; font-size: .95rem; line-height: 1;
+      transition: background .15s;
+    }
+    .fp-close:hover { background: rgba(0,0,0,.75); }
+
+    /* ── Lightbox scrollable body ── */
+    .fp-scroll { overflow-y: auto; max-height: 88vh; }
+
+    /* ── Product modal ── */
+    #productModal .fp-box { max-width: 480px; }
+    .pm-img-wrap {
+      position: relative;
+      aspect-ratio: 413/300;
+      background: #f3f3f3;
+      overflow: hidden;
+    }
+    .pm-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .pm-body { padding: 20px 24px 24px; }
+    .pm-tag {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      color: var(--red); background: var(--red-light);
+      margin-bottom: 10px;
+    }
+    .pm-name { font-size: 1.2rem; font-weight: 700; color: #1a1a1a; line-height: 1.35; }
+    .pm-price { font-size: 1.35rem; font-weight: 800; color: var(--red); margin-top: 8px; }
+    .pm-price-label { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
+
+    /* ── Article lightbox ── */
+    #articleModal .fp-box { max-width: 680px; }
+    .al-img-wrap {
+      position: relative;
+      aspect-ratio: 413/300;
+      background: #f3f3f3;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .al-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .al-body { padding: 24px 28px 32px; }
+    .al-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .al-tag {
+      font-size: 0.72rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      color: #fff; background: var(--red);
+    }
+    .al-date { font-size: 0.78rem; color: #999; }
+    .al-title { font-size: 1.25rem; font-weight: 800; color: #1a1a1a; line-height: 1.4; margin-bottom: 14px; }
+    .al-content { font-size: 0.9rem; color: #555; line-height: 1.85; white-space: pre-wrap; }
+    .al-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 20px; padding: 10px 22px; border-radius: 8px;
+      background: var(--red); color: #fff;
+      font-size: 0.85rem; font-weight: 700; text-decoration: none;
+      transition: background .15s;
+    }
+    .al-link:hover { background: var(--red-dark); }
+  </style>
+</head>
+<body class="bg-white text-gray-800">
+
+<!-- ════════════════════════════════════════════
+     COMPANY SUB-NAV
+════════════════════════════════════════════ -->
+<div class="bg-white border-b sticky top-0 z-40">
+  <div class="max-w-screen-xl mx-auto px-6">
+    <div class="flex items-stretch justify-between">
+
+      <!-- Tabs -->
+      <div class="flex items-stretch gap-0">
+        <a href="#intro"    class="subnav-item">公司介紹</a>
+        <a href="#info"     class="subnav-item">公司資料</a>
+        <a href="#services" class="subnav-item">產品服務</a>
+        <a href="#brand"    class="subnav-item active">品牌行銷</a>
+      </div>
+
+      <!-- Right actions -->
+      <div class="hidden sm:flex items-center gap-5 text-sm text-gray-500 shrink-0 pl-4">
+        <button class="flex items-center gap-1.5 hover:text-gray-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+          </svg>
+          分享
+        </button>
+        <button class="flex items-center gap-1.5 hover:text-gray-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          收藏公司
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     HERO CAROUSEL
+════════════════════════════════════════════ -->
+<section id="intro" class="relative overflow-hidden bg-gray-200" style="height:450px">
+
+  <!-- Track -->
+  <div id="carouselTrack" class="carousel-track h-full">
+    <div class="carousel-slide h-full">
+      <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1920&q=80"
+           class="w-full h-full object-cover" alt="飯店環境 1" />
+    </div>
+    <div class="carousel-slide h-full">
+      <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1920&q=80"
+           class="w-full h-full object-cover" alt="飯店環境 2" />
+    </div>
+    <div class="carousel-slide h-full">
+      <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1920&q=80"
+           class="w-full h-full object-cover" alt="飯店環境 3" />
+    </div>
+    <div class="carousel-slide h-full">
+      <img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1920&q=80"
+           class="w-full h-full object-cover" alt="飯店環境 4" />
+    </div>
+  </div>
+
+  <!-- Overlay gradient + text -->
+  <div class="hero-overlay absolute inset-0 flex flex-col justify-center pl-16 pb-6 pointer-events-none">
+    <p id="heroTextEn" class="text-white/70 text-base tracking-widest uppercase mb-2" style="font-weight:300; letter-spacing:.25em">
+      A SMILE WARMS HEARTS
+    </p>
+    <h2 id="heroTextZh" class="text-white text-4xl font-bold leading-tight mb-3">
+      福心笑容 台灣人情
+    </h2>
+    <p id="heroTextDesc" class="text-white/80 text-base leading-relaxed">
+      以最誠摯的笑容<br>為您迎來最美好的旅程體驗
+    </p>
+  </div>
+
+  <!-- Corner badges -->
+  <div class="absolute bottom-10 left-16">
+    <span id="heroBadgeL" class="hero-badge">星級客室</span>
+  </div>
+  <div class="absolute bottom-10 right-16">
+    <span id="heroBadgeR" class="hero-badge">快樂退宿</span>
+  </div>
+
+  <!-- Prev / Next arrows -->
+  <button id="carouselPrev"
+    class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/55 flex items-center justify-center text-white transition z-10">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </button>
+  <button id="carouselNext"
+    class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/55 flex items-center justify-center text-white transition z-10">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+  </button>
+
+  <!-- Dots -->
+  <div id="carouselDots" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     COMPANY HEADER
+════════════════════════════════════════════ -->
+<div class="bg-white border-b">
+  <div class="max-w-screen-xl mx-auto px-6 py-5">
+    <h1 id="companyName" class="text-xl font-bold text-gray-900 leading-snug">福容大飯店</h1>
+    <p class="text-sm text-gray-500 mt-0.5">福容大飯店連鎖旅館集團</p>
+
+    <!-- Social / action buttons -->
+    <div class="flex items-center gap-3 mt-3">
+      <!-- LINE@ -->
+      <a id="lineBtn" href="#" class="badge-line">
+        <!-- LINE icon -->
+        <svg width="16" height="16" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 4C11.163 4 4 10.268 4 17.994c0 6.98 6.19 12.815 14.566 13.826.568.122 1.341.374 1.537.858.176.44.115 1.13.057 1.576l-.248 1.492c-.077.44-.354 1.72 1.508.937 1.862-.783 10.043-5.912 13.706-10.12C37.315 23.6 36 20.916 36 17.994 36 10.268 28.837 4 20 4z" fill="white"/>
+          <path d="M17.05 22.15h-3.6a.6.6 0 01-.6-.6v-7.1a.6.6 0 011.2 0v6.5h3a.6.6 0 010 1.2zm2.35 0a.6.6 0 01-.6-.6v-7.1a.6.6 0 011.2 0v7.1a.6.6 0 01-.6.6zm7.45 0a.6.6 0 01-.48-.24l-3.47-4.73v4.37a.6.6 0 01-1.2 0v-7.1a.6.6 0 01.6-.6.6.6 0 01.48.24l3.47 4.73v-4.37a.6.6 0 011.2 0v7.1a.6.6 0 01-.6.6z" fill="#06C755"/>
+        </svg>
+        <span id="lineBtnText">官方 LINE@</span>
+      </a>
+
+      <!-- Facebook -->
+      <a id="fbBtn" href="#" class="badge-fb" aria-label="Facebook">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12.07h2.773l-.443 2.89h-2.33v6.988C20.343 21.2 24 17.063 24 12.073z"/>
+        </svg>
+      </a>
+
+      <!-- Instagram -->
+      <a id="igBtn" href="#" class="badge-ig" aria-label="Instagram">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<main class="max-w-screen-xl mx-auto px-6 py-10">
+
+  <!-- ── 公司資料 ── -->
+  <section id="info" class="pb-10 border-b border-gray-100 mb-10">
+    <div class="flex flex-col md:flex-row md:gap-12">
+
+      <!-- Left label -->
+      <div class="mb-5 md:mb-0 md:w-36 shrink-0">
+        <p class="sec-title">公司資料</p>
+        <p class="sec-subtitle">Information</p>
+      </div>
+
+      <!-- Right content -->
+      <div class="flex flex-col sm:flex-row sm:gap-16 flex-1">
+        <!-- 電話 -->
+        <div class="mb-5 sm:mb-0 min-w-max">
+          <p class="text-xs text-gray-400 mb-1">電話</p>
+          <p id="infoPhone" class="text-sm font-medium text-gray-800">(02)7755-0920</p>
+        </div>
+
+        <!-- 營業時間 -->
+        <div>
+          <p class="text-xs text-gray-400 mb-1">營業時間</p>
+          <p id="infoTodayStatus" class="text-sm hours-open font-medium mb-1">今日營業中</p>
+          <div id="infoHoursBody">
+            <p class="text-sm text-gray-600">星期一 ~ 四&nbsp;&nbsp;上午 11:00 - 下午 8:30</p>
+            <p class="text-sm text-gray-600">星期五&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上午 11:00 - 下午 8:30</p>
+          </div>
+          <a href="#" class="text-xs mt-2 inline-block" style="color:var(--red)">查看所有營業時間 +</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 販售商品 ── -->
+  <section id="services" class="mb-12">
+    <div class="mb-6">
+      <p id="productsSectionTitle" class="sec-title">販售商品</p>
+      <p class="sec-subtitle">Goods</p>
+    </div>
+
+    <!-- Products grid: 4 columns -->
+    <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+
+    <!-- Product pagination -->
+    <div class="flex items-center justify-center gap-2 mt-7">
+      <button class="text-gray-300 hover:text-gray-500 transition p-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <button class="text-gray-300 hover:text-gray-500 transition p-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ── 最新消息 ── -->
+  <section id="brand" class="mb-10">
+    <div class="mb-6">
+      <p id="newsSectionTitle" class="sec-title">最新消息</p>
+      <p class="sec-subtitle">Latest News</p>
+    </div>
+
+    <!-- News list (full width) -->
+    <div id="newsList" class="divide-y divide-gray-100"></div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-center gap-1 mt-8 text-sm">
+      <button class="page-btn text-gray-400">&lsaquo;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <span class="page-btn text-gray-400">…</span>
+      <button class="page-btn">16</button>
+      <button class="page-btn text-gray-400">&rsaquo;</button>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-2">1 / 5 頁</p>
+  </section>
+
+</main>
+
+<!-- ════════════════════════════════════════════
+     PRODUCT MODAL
+════════════════════════════════════════════ -->
+<div id="productModal" class="fp-overlay" role="dialog" aria-modal="true">
+  <div class="fp-box">
+    <button class="fp-close" onclick="closeModal('productModal')" aria-label="關閉">✕</button>
+    <div class="pm-img-wrap">
+      <img id="pmImg" src="" alt="" />
+    </div>
+    <div class="pm-body">
+      <div id="pmTag" class="pm-tag"></div>
+      <p id="pmName" class="pm-name"></p>
+      <p id="pmPrice" class="pm-price"></p>
+      <p id="pmPriceLabel" class="pm-price-label">含稅售價</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     ARTICLE LIGHTBOX
+════════════════════════════════════════════ -->
+<div id="articleModal" class="fp-overlay" role="dialog" aria-modal="true">
+  <div class="fp-box fp-scroll">
+    <button class="fp-close" onclick="closeModal('articleModal')" aria-label="關閉">✕</button>
+    <div class="al-img-wrap">
+      <img id="alImg" src="" alt="" />
+    </div>
+    <div class="al-body">
+      <div class="al-meta">
+        <span id="alTag" class="al-tag"></span>
+        <span id="alDate" class="al-date"></span>
+      </div>
+      <h2 id="alTitle" class="al-title"></h2>
+      <p id="alContent" class="al-content"></p>
+      <a id="alLink" href="#" class="al-link" target="_blank" rel="noopener">
+        閱讀原文
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════ -->
+<script>
+// ── Default data (fallback when no admin data saved) ──
+const hotel = {
+  products: [
+    { id:1, name:'紅燒牛肉麵',      price:300,  tag:'人氣', img:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80' },
+    { id:2, name:'登峰片鴨知識盒',  price:1590, tag:'精選', img:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80' },
+    { id:3, name:'蜜福粽糯米禮盒',  price:1590, tag:'節慶', img:'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80' },
+    { id:4, name:'左光楚蘭',        price:null, tag:'熱銷', img:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=600&q=80' },
+    { id:5, name:'黃金十八個的鮑汁', price:null, tag:'獨家', img:'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' },
+    { id:6, name:'翡翠鮮肉包',      price:1590, tag:'人氣', img:'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=600&q=80' },
+    { id:7, name:'黃金清沙粒球',    price:1580, tag:'限定', img:'https://images.unsplash.com/photo-1548940740-204726a19be3?auto=format&fit=crop&w=600&q=80' },
+    { id:8, name:'港式窩特窩蛋糕',  price:599,  tag:'甜點', img:'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80' },
+  ],
+  news: [
+    { id:1, tag:'光采', title:'春花燈福容・花燈親旅行', date:'2025 / 01 / 02',
+      content:'平谷（訂一至三週日）：帶半費床位（4人）周末一房NT$4,999＋10%；三大二費 NT$4,888＋10%。\n★長住憑條：起訂品達NT$100億元；因熱水機輸臨之宅；各地捕所訴2棟宴＋2席確彼費，其彼牛排有肉館每個有開元之宅地方帶著費效大宅邸。\n★接受：活動費假費、放送後定特換贈銀也有價NT2,000。',
+      img:'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=400&q=80', link:'#' },
+    { id:2, tag:'光采', title:'福容馬上籌宴 歡迎歡親天', date:'2023 / 12 / 01',
+      content:'活動期間：2026/01/01–2026/03/11\n優惠說明：福容大飯店提供vodce商店美妙露除非說法，最最優惠提供vodc本商店美妙露除排說法，最最優惠提供vod本\n▲ 活動對象：活動期間「優是品位 位一 位＋」優先符合以上條件，陳磁有消費費，\n活動一「大宅邸」。',
+      img:'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80', link:'#' },
+    { id:3, tag:'光采', title:'中華車會＆港灣日新馬精 旅客優惠', date:'2025 / 11 / 11',
+      content:'即日至2026年12月31日，社理進入中年半年費員入住活活動可拿到福容大飯店（福容旅宿各分店，入住中年入住中年中華車業會員貢貢件行入住，享受滿消費享享費費費品享費\nFrom now until December 31, 2026, VIP members of the Chinese Taipei Automo…',
+      img:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=400&q=80', link:'#' },
+    { id:4, tag:'光采', title:'來福容過生日，無論是餐飲或住宿', date:'2025 / 11 / 11',
+      content:'平日 NT$4,999起\n2.生日月份送入住本客室享受折升升享折折折折折折享，\n3.進放品的的的的的的的的的的的的優惠享享享享享享享享享享\n4.享折優優優優優優優優優優優優優優優折折折折折折（含稅 NT$400）。\n5.來福容生日慶帶共費（位饌／藏點）一份。',
+      img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=400&q=80', link:'#' },
+    { id:5, tag:'光采', title:'2026 會員禮遇', date:'2025 / 11 / 11',
+      content:'親愛的福容卡會員！\n感謝您長期以來對我們的支持與信任。\n我們為您身為白金福容卡會員，全台所有福容大飯店旗下一系列精選會員尊榮禮遇。\n敬致：您會員身分，於任何時或絕排享受優惠，包括福容大飯店各旅宿設施折扣、福容旅宿設施，並獨擁福容品及豐享享享享享享享享11112Hotel預訂份。',
+      img:'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80', link:'#' },
+  ],
+};
+
+// ── Helpers ───────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Load from localStorage & apply to DOM ─────
+function loadAndRender() {
+  let d = null;
+  try {
+    const raw = localStorage.getItem('hotelData');
+    if (raw) d = JSON.parse(raw);
+  } catch(e) {}
+
+  if (d) {
+    // ── Hero carousel images ──
+    if (d.hero?.images?.length) {
+      const track = document.getElementById('carouselTrack');
+      track.innerHTML = d.hero.images.map((img, i) => `
+        <div class="carousel-slide h-full">
+          <img src="${esc(img.src)}" class="w-full h-full object-cover" alt="飯店環境 ${i+1}" />
+        </div>`).join('');
+      const dotsC = document.getElementById('carouselDots');
+      dotsC.innerHTML = d.hero.images.map((_, i) =>
+        `<div class="dot${i === 0 ? ' active' : ''}"></div>`).join('');
+    }
+
+    // ── Hero overlay text ──
+    if (d.hero?.textEn)   document.getElementById('heroTextEn').textContent = d.hero.textEn;
+    if (d.hero?.textZh)   document.getElementById('heroTextZh').textContent = d.hero.textZh;
+    if (d.hero?.textDesc) {
+      const el = document.getElementById('heroTextDesc');
+      el.innerHTML = esc(d.hero.textDesc).replace(/\n/g, '<br>');
+    }
+    if (d.hero?.badgeL) document.getElementById('heroBadgeL').textContent = d.hero.badgeL;
+    if (d.hero?.badgeR) document.getElementById('heroBadgeR').textContent = d.hero.badgeR;
+
+    // ── Company name ──
+    if (d.brandName) document.getElementById('companyName').textContent = d.brandName;
+
+    // ── CTA / LINE button ──
+    const lineBtn = document.getElementById('lineBtn');
+    if (lineBtn && d.cta) {
+      if (d.cta.text)  document.getElementById('lineBtnText').textContent = d.cta.text;
+      if (d.cta.url)   lineBtn.href = d.cta.url;
+      if (d.cta.color) lineBtn.style.background = d.cta.color;
+    }
+
+    // ── Facebook ──
+    const fbBtn = document.getElementById('fbBtn');
+    if (fbBtn) {
+      if (d.fb) { fbBtn.href = d.fb; fbBtn.style.display = ''; }
+      else fbBtn.style.display = 'none';
+    }
+
+    // ── Instagram ──
+    const igBtn = document.getElementById('igBtn');
+    if (igBtn) {
+      if (d.ig) { igBtn.href = d.ig; igBtn.style.display = ''; }
+      else igBtn.style.display = 'none';
+    }
+
+    // ── Info: today status ──
+    if (d.info?.todayStatus) {
+      const el = document.getElementById('infoTodayStatus');
+      const map = { open:'今日營業中', closed:'今日公休', holiday:'假日營業中' };
+      el.textContent = map[d.info.todayStatus] || d.info.todayStatus;
+      el.className = 'text-sm font-medium mb-1 ' +
+        (d.info.todayStatus === 'closed' ? 'text-gray-400' : 'hours-open');
+    }
+
+    // ── Info: hours ──
+    if (d.info?.hours?.length) {
+      document.getElementById('infoHoursBody').innerHTML =
+        d.info.hours.map(h =>
+          `<p class="text-sm text-gray-600">${esc(h.day)}&nbsp;&nbsp;${esc(h.time)}</p>`
+        ).join('');
+    }
+
+    // ── Products section title ──
+    if (d.products?.title)
+      document.getElementById('productsSectionTitle').textContent = d.products.title;
+
+    // ── Products items (override defaults) ──
+    if (d.products?.items?.length) hotel.products = d.products.items;
+
+    // ── News section title ──
+    if (d.articles?.title)
+      document.getElementById('newsSectionTitle').textContent = d.articles.title;
+
+    // ── News items (override defaults) ──
+    if (d.articles?.items?.length) {
+      hotel.news = d.articles.items.map(a => ({
+        id:      a.id,
+        tag:     a.tag,
+        title:   a.title,
+        date:    (a.date || '').replace(/-/g, ' / '),
+        content: a.content || '',
+        img:     a.img || null,
+        link:    a.link || '#',
+      }));
+    }
+  }
+
+  // ── Render product + news grids ──
+  renderProducts();
+  renderNews();
+}
+
+// ── Render Products ───────────────────────────
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML = hotel.products.map((p, idx) => `
+    <div class="product-card bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition cursor-pointer group"
+         onclick="openProduct(${idx})">
+      <div class="overflow-hidden bg-gray-100 relative" style="aspect-ratio:413/300">
+        <img src="${esc(p.img || p.image || '')}" alt="${esc(p.name)}"
+             class="product-img absolute inset-0 w-full h-full object-cover transition duration-400" />
+        <span class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-full bg-white/90 backdrop-blur"
+              style="color:var(--red)">${esc(p.tag)}</span>
+      </div>
+      <div class="p-3">
+        <p class="text-sm font-medium text-gray-800 leading-snug">${esc(p.name)}</p>
+        ${p.price ? `<p class="text-sm font-bold mt-1" style="color:var(--red)">NT$ ${Number(p.price).toLocaleString()}</p>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Render News ───────────────────────────────
+function renderNews() {
+  const list = document.getElementById('newsList');
+  list.innerHTML = hotel.news.map((n, idx) => `
+    <article class="news-item py-6 flex gap-5 cursor-pointer group" onclick="openArticle(${idx})">
+      <div class="shrink-0 rounded-xl overflow-hidden" style="width:168px;aspect-ratio:413/300">
+        <img src="${esc(n.img || n.image || '')}" alt=""
+             class="w-full h-full object-cover group-hover:opacity-90 transition" />
+      </div>
+      <div class="flex-1 min-w-0 flex flex-col">
+        <h3 class="text-sm font-bold text-gray-900 leading-snug mb-2 group-hover:text-red-700 transition">${esc(n.title)}</h3>
+        <p class="text-xs text-gray-500 leading-relaxed line-clamp-3 flex-1">${esc(n.content || n.preview || '')}</p>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-xs font-medium" style="color:var(--red)">更多 +</span>
+          <span class="text-xs text-gray-400">${esc(n.date)}</span>
+        </div>
+      </div>
+    </article>
+  `).join('');
+}
+
+// ── Carousel (dynamic slide count) ────────────
+function initCarousel() {
+  const track = document.getElementById('carouselTrack');
+  const dotsC = document.getElementById('carouselDots');
+  let cur = 0, timer;
+
+  function slides() { return track.querySelectorAll('.carousel-slide'); }
+  function dots()   { return dotsC.querySelectorAll('.dot'); }
+
+  function go(idx) {
+    const total = slides().length;
+    if (!total) return;
+    cur = (idx + total) % total;
+    track.style.transform = `translateX(-${cur * 100}%)`;
+    dots().forEach((d, i) => d.classList.toggle('active', i === cur));
+  }
+
+  function start() { timer = setInterval(() => go(cur + 1), 4500); }
+  function stop()  { clearInterval(timer); }
+
+  document.getElementById('carouselPrev').addEventListener('click', () => { stop(); go(cur - 1); start(); });
+  document.getElementById('carouselNext').addEventListener('click', () => { stop(); go(cur + 1); start(); });
+  dotsC.addEventListener('click', e => {
+    const dot = e.target.closest('.dot');
+    if (!dot) return;
+    const i = [...dots()].indexOf(dot);
+    if (i >= 0) { stop(); go(i); start(); }
+  });
+  start();
+}
+
+// ── Sub-nav scroll-spy ────────────────────────
+(function() {
+  const items    = document.querySelectorAll('.subnav-item');
+  const ids      = ['intro','info','services','brand'];
+  const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+  const navH     = 48;
+
+  window.addEventListener('scroll', () => {
+    let active = 0;
+    sections.forEach((sec, i) => {
+      if (window.scrollY >= sec.offsetTop - navH - 20) active = i;
+    });
+    items.forEach((el, i) => el.classList.toggle('active', i === active));
+  }, { passive: true });
+})();
+
+// ── Modal / Lightbox ─────────────────────────
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on overlay backdrop click
+['productModal','articleModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) closeModal(id);
+  });
+});
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('productModal');
+    closeModal('articleModal');
+  }
+});
+
+function openProduct(idx) {
+  const p = hotel.products[idx];
+  if (!p) return;
+  document.getElementById('pmImg').src   = p.img || p.image || '';
+  document.getElementById('pmImg').alt   = p.name || '';
+  document.getElementById('pmTag').textContent  = p.tag  || '';
+  document.getElementById('pmName').textContent = p.name || '';
+  if (p.price) {
+    document.getElementById('pmPrice').textContent      = 'NT$ ' + Number(p.price).toLocaleString();
+    document.getElementById('pmPriceLabel').style.display = '';
+  } else {
+    document.getElementById('pmPrice').textContent      = '洽店家';
+    document.getElementById('pmPriceLabel').style.display = 'none';
+  }
+  openModal('productModal');
+}
+
+function openArticle(idx) {
+  const n = hotel.news[idx];
+  if (!n) return;
+  const img = document.getElementById('alImg');
+  img.src = n.img || n.image || '';
+  img.alt = n.title || '';
+  document.getElementById('alImg').closest('.al-img-wrap').style.display =
+    (n.img || n.image) ? '' : 'none';
+  document.getElementById('alTag').textContent     = n.tag   || '';
+  document.getElementById('alDate').textContent    = n.date  || '';
+  document.getElementById('alTitle').textContent   = n.title || '';
+  document.getElementById('alContent').textContent = n.content || n.preview || '';
+  const link = document.getElementById('alLink');
+  if (n.link && n.link !== '#') {
+    link.href = n.link;
+    link.style.display = 'inline-flex';
+  } else {
+    link.style.display = 'none';
+  }
+  openModal('articleModal');
+}
+
+// ── Init ──────────────────────────────────────
+loadAndRender();   // reads localStorage, updates DOM, calls renderProducts + renderNews
+initCarousel();    // init after DOM is updated with dynamic slides
+</script>
+</body>
+</html>

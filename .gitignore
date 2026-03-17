@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Node / Next.js
+node_modules/
+my-app/
+
+# Build outputs
+*.log

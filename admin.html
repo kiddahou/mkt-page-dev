@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>企業品牌後台管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --red:#CC0000; --red-dark:#A80000; --sidebar-w:220px; }
+    body { font-family:'Noto Sans TC',sans-serif; }
+
+    /* ── Sidebar ── */
+    #sidebar { width:var(--sidebar-w); min-height:100vh; background:#1e1e2e; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 20px; color:#aaa; font-size:.85rem;
+      cursor:pointer; transition:background .15s, color .15s;
+      border-left:3px solid transparent;
+    }
+    .nav-item:hover { background:#2a2a3e; color:#fff; }
+    .nav-item.active { background:#2a2a3e; color:#fff; border-left-color:var(--red); }
+    .nav-icon { width:18px; height:18px; flex-shrink:0; opacity:.7; }
+    .nav-item.active .nav-icon, .nav-item:hover .nav-icon { opacity:1; }
+
+    /* ── Panel ── */
+    .panel { display:none; }
+    .panel.active { display:block; }
+
+    /* ── Form elements ── */
+    .form-label { font-size:.8rem; font-weight:600; color:#555; margin-bottom:4px; display:block; }
+    .form-note  { font-size:.75rem; color:#999; margin-top:3px; }
+    .form-input {
+      width:100%; border:1px solid #e0e0e0; border-radius:8px;
+      padding:9px 12px; font-size:.875rem; color:#333;
+      outline:none; transition:border .15s;
+      font-family:inherit;
+    }
+    .form-input:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(204,0,0,.08); }
+    .form-input:disabled { background:#f8f8f8; color:#aaa; cursor:not-allowed; }
+    textarea.form-input { resize:vertical; }
+
+    /* ── Card ── */
+    .card { background:#fff; border-radius:12px; border:1px solid #eee; padding:24px; margin-bottom:20px; }
+    .card-title { font-size:.95rem; font-weight:700; color:#222; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+    /* ── Badge ── */
+    .spec-badge { background:#f0f0f0; color:#666; font-size:.7rem; padding:2px 8px; border-radius:10px; font-weight:500; }
+    .required-badge { background:#fff0f0; color:var(--red); font-size:.7rem; padding:2px 8px; border-radius:10px; font-weight:600; }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border:2px dashed #e0e0e0; border-radius:10px;
+      background:#fafafa; padding:24px;
+      text-align:center; cursor:pointer;
+      transition:border-color .2s, background .2s;
+    }
+    .upload-zone:hover { border-color:var(--red); background:#fff5f5; }
+
+    /* ── Image card ── */
+    .img-card {
+      position:relative; border-radius:8px; overflow:hidden;
+      border:1px solid #eee; background:#f5f5f5;
+      aspect-ratio:16/9;
+    }
+    .img-card img { width:100%; height:100%; object-fit:cover; }
+    .img-card .img-actions {
+      position:absolute; top:6px; right:6px;
+      display:flex; gap:4px;
+    }
+    .img-btn {
+      width:28px; height:28px; border-radius:6px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:.75rem; border:none;
+      transition:opacity .2s;
+    }
+    .img-btn:hover { opacity:.8; }
+    .img-btn-del  { background:rgba(220,38,38,.85); color:#fff; }
+    .img-btn-move { background:rgba(0,0,0,.5); color:#fff; }
+
+    /* ── Product card (admin) ── */
+    .prod-card {
+      border:1px solid #eee; border-radius:10px; overflow:hidden;
+      background:#fff; transition:box-shadow .15s;
+    }
+    .prod-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+
+    /* ── Hours row ── */
+    .hours-row { display:grid; grid-template-columns:110px 1fr auto; gap:8px; align-items:center; margin-bottom:8px; }
+
+    /* ── Article card ── */
+    .article-card {
+      border:1px solid #eee; border-radius:10px;
+      padding:16px; background:#fff;
+      display:flex; gap:14px; align-items:flex-start;
+      cursor:pointer; transition:box-shadow .15s;
+    }
+    .article-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+
+    /* ── Btn ── */
+    .btn-primary {
+      background:var(--red); color:#fff; border:none;
+      padding:9px 22px; border-radius:8px; font-size:.875rem;
+      font-weight:600; cursor:pointer; transition:background .15s;
+      font-family:inherit;
+    }
+    .btn-primary:hover { background:var(--red-dark); }
+    .btn-secondary {
+      background:#f3f3f3; color:#444; border:none;
+      padding:9px 18px; border-radius:8px; font-size:.875rem;
+      font-weight:500; cursor:pointer; transition:background .15s;
+      font-family:inherit;
+    }
+    .btn-secondary:hover { background:#e8e8e8; }
+    .btn-danger {
+      background:#fff0f0; color:#cc0000; border:1px solid #fcc;
+      padding:7px 14px; border-radius:8px; font-size:.8rem;
+      font-weight:600; cursor:pointer; transition:all .15s;
+      font-family:inherit;
+    }
+    .btn-danger:hover { background:#ffe0e0; }
+
+    /* ── Toast ── */
+    #toast {
+      position:fixed; bottom:28px; right:28px; z-index:999;
+      background:#222; color:#fff; border-radius:10px;
+      padding:12px 20px; font-size:.85rem; font-weight:500;
+      transform:translateY(80px); opacity:0;
+      transition:all .3s cubic-bezier(.25,.8,.25,1);
+      pointer-events:none;
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+
+    /* ── CTA color swatches ── */
+    .swatch {
+      width:28px; height:28px; border-radius:50%; cursor:pointer;
+      border:2px solid transparent; transition:border-color .15s, transform .15s;
+    }
+    .swatch.selected, .swatch:hover { border-color:#333; transform:scale(1.15); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      z-index:900; display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .2s;
+    }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal {
+      background:#fff; border-radius:16px; padding:28px;
+      width:600px; max-width:90vw; max-height:85vh;
+      overflow-y:auto; transform:translateY(20px);
+      transition:transform .2s;
+    }
+    .modal-overlay.open .modal { transform:translateY(0); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:#f5f5f5; }
+    ::-webkit-scrollbar-thumb { background:#ddd; border-radius:3px; }
+
+    /* ── Info row ── */
+    .info-row { display:flex; gap:8px; align-items:flex-start; padding:6px 0; font-size:.8rem; }
+    .info-row .info-icon { color:var(--red); margin-top:1px; flex-shrink:0; }
+    .info-row .info-text { color:#666; line-height:1.5; }
+
+    /* ── Section badge ── */
+    .section-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      background:var(--red); color:#fff;
+      font-size:.7rem; font-weight:700;
+      padding:2px 10px; border-radius:12px;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- ════════════════════════════════════════
+     LAYOUT
+════════════════════════════════════════ -->
+<div class="flex min-h-screen">
+
+  <!-- ── Sidebar ── -->
+  <aside id="sidebar" class="flex-shrink-0 flex flex-col">
+    <!-- Logo -->
+    <div class="px-5 py-5 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-sm" style="background:var(--red)">HR</div>
+        <div>
+          <p class="text-white text-sm font-bold leading-tight">品牌後台</p>
+          <p class="text-white/40 text-xs">HotelHR 管理中心</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 py-4">
+      <p class="text-white/30 text-xs px-5 mb-2 font-medium tracking-wider">頁面設定</p>
+      <div class="nav-item active" data-panel="heroPanel" onclick="switchPanel(this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="1.8"/>
+          <path stroke-linecap="round" stroke-width="1.8" d="M3 9h18"/>
+        </svg>
+        <span>A · 主視覺輪播</span>
+      </div>
+      <div class="nav-item" data-panel="ctaPanel" onclick="switchPanel(this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        <span>B · 互動按鈕區</span>
+      </div>
+      <div class="nav-item" data-panel="infoPanel" onclick="switchPanel(this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3"/>
+        </svg>
+        <span>C · 店家資訊</span>
+      </div>
+      <div class="nav-item" data-panel="productPanel" onclick="switchPanel(this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7"/>
+        </svg>
+        <span>D · 商品區塊</span>
+      </div>
+      <div class="nav-item" data-panel="articlePanel" onclick="switchPanel(this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"/>
+          <path stroke-linecap="round" stroke-width="1.8" d="M9 13h6M9 17h4"/>
+        </svg>
+        <span>E · 文章區塊</span>
+      </div>
+
+      <p class="text-white/30 text-xs px-5 mt-6 mb-2 font-medium tracking-wider">預覽</p>
+      <a href="hotel-profile.html" target="_blank" class="nav-item">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+        <span>查看前台頁面</span>
+      </a>
+    </nav>
+
+    <!-- Footer -->
+    <div class="px-5 py-4 border-t border-white/10 text-white/30 text-xs">
+      <p>福容大飯店</p>
+      <p class="mt-0.5">公司帳號：FC001</p>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Top header -->
+    <header class="bg-white border-b h-14 flex items-center justify-between px-6 shrink-0">
+      <div id="breadcrumb" class="flex items-center gap-2 text-sm text-gray-500">
+        <span>品牌後台</span>
+        <span>/</span>
+        <span id="breadcrumb-current" class="text-gray-800 font-semibold">主視覺輪播</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="hotel-profile.html" target="_blank"
+           class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+          預覽前台
+        </a>
+        <button id="saveBtn" class="btn-primary flex items-center gap-2" onclick="saveAll()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          儲存設定
+        </button>
+      </div>
+    </header>
+
+    <!-- Panels -->
+    <div class="flex-1 overflow-y-auto p-6">
+
+      <!-- ════════ PANEL A：主視覺輪播 ════════ -->
+      <div id="heroPanel" class="panel active">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span class="section-badge">A</span> 主視覺輪播
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">公司頁面最上方的門面看板，支援最多 5 張圖片自動輪播。</p>
+          </div>
+        </div>
+
+        <!-- Spec info -->
+        <div class="card bg-blue-50 border-blue-100 mb-5">
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div class="info-row">
+              <span class="info-icon">📐</span>
+              <div class="info-text"><strong>桌機</strong>：1920 × 450 px</div>
+            </div>
+            <div class="info-row">
+              <span class="info-icon">📱</span>
+              <div class="info-text"><strong>手機</strong>：375 × 211 px</div>
+            </div>
+            <div class="info-row">
+              <span class="info-icon">💻</span>
+              <div class="info-text"><strong>平板</strong>：768 × 432 px</div>
+            </div>
+          </div>
+          <p class="text-xs text-blue-600 mt-2">建議上傳 1920×450 px 的橫幅圖片，格式 JPG 或 PNG，每張上限 5MB。</p>
+        </div>
+
+        <!-- Image grid -->
+        <div class="card">
+          <div class="card-title">
+            輪播圖片管理
+            <span class="spec-badge" id="heroCount">0 / 5 張</span>
+          </div>
+          <div id="heroGrid" class="grid grid-cols-2 gap-4 mb-4"></div>
+
+          <!-- Upload zone -->
+          <div class="upload-zone" id="heroUploadZone" onclick="document.getElementById('heroFileInput').click()">
+            <div class="text-4xl mb-2">📷</div>
+            <p class="text-sm font-semibold text-gray-600">點擊上傳圖片</p>
+            <p class="text-xs text-gray-400 mt-1">JPG / PNG，最大 5MB，最多 5 張</p>
+          </div>
+          <input type="file" id="heroFileInput" accept="image/*" multiple class="hidden" onchange="handleHeroUpload(event)" />
+        </div>
+
+        <!-- Carousel text overlay settings -->
+        <div class="card">
+          <div class="card-title">輪播文字 Overlay 設定</div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="form-label">英文副標 <span class="spec-badge">選填</span></label>
+              <input id="heroTextEn" class="form-input" type="text" placeholder="A SMILE WARMS HEARTS"
+                     value="A SMILE WARMS HEARTS" />
+            </div>
+            <div>
+              <label class="form-label">中文主標 <span class="required-badge">必填</span></label>
+              <input id="heroTextZh" class="form-input" type="text" placeholder="福心笑容 台灣人情"
+                     value="福心笑容 台灣人情" />
+            </div>
+            <div class="col-span-2">
+              <label class="form-label">描述文字 <span class="spec-badge">選填</span></label>
+              <input id="heroTextDesc" class="form-input" type="text"
+                     placeholder="以最誠摯的笑容，為您迎來最美好的旅程體驗"
+                     value="以最誠摯的笑容，為您迎來最美好的旅程體驗" />
+            </div>
+            <div>
+              <label class="form-label">左下角徽章 <span class="spec-badge">選填</span></label>
+              <input id="heroBadgeL" class="form-input" type="text" placeholder="星級客室" value="星級客室" />
+            </div>
+            <div>
+              <label class="form-label">右下角徽章 <span class="spec-badge">選填</span></label>
+              <input id="heroBadgeR" class="form-input" type="text" placeholder="快樂退宿" value="快樂退宿" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ PANEL B：互動按鈕區 ════════ -->
+      <div id="ctaPanel" class="panel">
+        <div class="mb-5">
+          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span class="section-badge">B</span> 互動按鈕區
+          </h2>
+          <p class="text-sm text-gray-500 mt-1">設定公司名稱展示與社群連結，讓求職者一鍵聯繫。</p>
+        </div>
+
+        <!-- 1. 品牌名稱 -->
+        <div class="card">
+          <div class="card-title">
+            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            1. 品牌名稱
+          </div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="form-label">品牌顯示名稱 <span class="required-badge">必填</span></label>
+              <input id="brandName" class="form-input" type="text" placeholder="請輸入對外正式顯示的品牌名稱"
+                     value="福容大飯店" />
+              <p class="form-note">請填寫對外正式顯示名稱，此名稱將顯示於前台頁面標題。</p>
+            </div>
+            <div>
+              <label class="form-label">公司法定名稱 <span class="spec-badge">系統帶入</span></label>
+              <input class="form-input" type="text" value="福容大飯店連鎖旅館集團" disabled />
+              <p class="form-note text-orange-500">⚠ 此欄位由系統依帳號綁定資訊自動帶入，無法手動修改。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CTA Button -->
+        <div class="card">
+          <div class="card-title">
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="8" width="18" height="8" rx="4" stroke-width="2"/>
+            </svg>
+            3. 行動按鈕（CTA Button）
+          </div>
+          <div class="grid grid-cols-2 gap-5 mb-4">
+            <div>
+              <label class="form-label">按鈕文字 <span class="required-badge">必填</span></label>
+              <input id="ctaText" class="form-input" type="text" placeholder="例如：官方 LINE@" value="官方 LINE@" />
+              <p class="form-note">若留空，前台將不顯示此按鈕。</p>
+            </div>
+            <div>
+              <label class="form-label">導向連結（URL）<span class="required-badge">必填</span></label>
+              <input id="ctaUrl" class="form-input" type="url" placeholder="https://" value="https://line.me/R/ti/p/@xxxxx" />
+              <p class="form-note">請填寫完整網址，包含 https://</p>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">按鈕顏色</label>
+            <div class="flex items-center gap-3 mt-2" id="ctaColorPicker">
+              <div class="swatch selected" style="background:#CC0000" data-color="#CC0000" onclick="selectSwatch(this)"></div>
+              <div class="swatch" style="background:#1877F2" data-color="#1877F2" onclick="selectSwatch(this)"></div>
+              <div class="swatch" style="background:#25D366" data-color="#25D366" onclick="selectSwatch(this)"></div>
+              <div class="swatch" style="background:#F59E0B" data-color="#F59E0B" onclick="selectSwatch(this)"></div>
+              <div class="swatch" style="background:#6366F1" data-color="#6366F1" onclick="selectSwatch(this)"></div>
+              <div class="swatch" style="background:#222222" data-color="#222222" onclick="selectSwatch(this)"></div>
+              <input type="color" id="ctaColorCustom" class="w-8 h-8 rounded-full cursor-pointer border-0 p-0" value="#CC0000"
+                     onchange="document.getElementById('ctaColorDisplay').style.background=this.value" />
+              <span class="text-xs text-gray-400">自訂顏色</span>
+            </div>
+          </div>
+          <!-- Preview -->
+          <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p class="text-xs text-gray-400 mb-2">按鈕預覽：</p>
+            <button id="ctaPreviewBtn" class="text-white text-sm font-bold px-4 py-2 rounded-lg" style="background:#CC0000">官方 LINE@</button>
+          </div>
+        </div>
+
+        <!-- 3. FB + IG -->
+        <div class="card">
+          <div class="card-title">
+            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12.07h2.773l-.443 2.89h-2.33v6.988C20.343 21.2 24 17.063 24 12.073z"/></svg>
+            4 &amp; 5. 社群連結
+          </div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="form-label">Facebook 粉絲頁網址</label>
+              <input id="fbUrl" class="form-input" type="url"
+                     placeholder="https://www.facebook.com/xxxxx"
+                     value="https://www.facebook.com/furonghotel" />
+              <p class="form-note">若未填寫，前台不顯示 FB 按鈕。</p>
+            </div>
+            <div>
+              <label class="form-label">Instagram 帳號網址</label>
+              <input id="igUrl" class="form-input" type="url"
+                     placeholder="https://www.instagram.com/xxxxx"
+                     value="https://www.instagram.com/furonghotel" />
+              <p class="form-note">若未填寫，前台不顯示 IG 按鈕。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ PANEL C：店家資訊 ════════ -->
+      <div id="infoPanel" class="panel">
+        <div class="mb-5">
+          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span class="section-badge">C</span> 店家資訊
+          </h2>
+          <p class="text-sm text-gray-500 mt-1">設定對外公開的聯繫與營業時間資訊。</p>
+        </div>
+
+        <!-- 電話 -->
+        <div class="card">
+          <div class="card-title">1. 聯繫電話</div>
+          <div class="max-w-xs">
+            <label class="form-label">電話號碼 <span class="spec-badge">系統帶入</span></label>
+            <input class="form-input" type="text" value="(02)7755-0920" disabled />
+            <p class="form-note text-orange-500">⚠ 電話由系統自動抓取帳號綁定資訊，不可手動修改，以確保資訊正確性與安全性。如需變更，請洽客服處理。</p>
+          </div>
+        </div>
+
+        <!-- 營業時間 -->
+        <div class="card">
+          <div class="card-title">
+            2. 營業時間
+            <button class="btn-secondary text-xs ml-auto" onclick="addHoursRow()">＋ 新增時段</button>
+          </div>
+          <div class="mb-3">
+            <div class="grid grid-cols-3 gap-2 text-xs text-gray-400 font-medium mb-2 px-1">
+              <span>日期／時段</span><span>時間範圍</span><span></span>
+            </div>
+            <div id="hoursContainer"></div>
+          </div>
+          <div class="bg-orange-50 border border-orange-100 rounded-lg p-3 mt-4">
+            <p class="text-xs text-orange-600">
+              💡 若某時段未填寫，前台將顯示「請聯繫店家」。請適時更新，避免因資訊不完整影響求職者體驗。
+            </p>
+          </div>
+          <!-- Today highlight -->
+          <div class="mt-4">
+            <label class="form-label">今日營業狀態顯示</label>
+            <div class="flex items-center gap-3">
+              <select id="todayStatus" class="form-input max-w-xs">
+                <option value="open">今日營業至</option>
+                <option value="closed">今日公休</option>
+              </select>
+              <input id="todayCloseTime" class="form-input max-w-xs" type="text" placeholder="20:30" value="20:30" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ PANEL D：商品區塊 ════════ -->
+      <div id="productPanel" class="panel">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span class="section-badge">D</span> 商品區塊
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">管理前台販售商品列表，最多可新增 80 項商品。</p>
+          </div>
+          <button class="btn-primary flex items-center gap-2" onclick="openProductModal()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            新增商品
+          </button>
+        </div>
+
+        <!-- Section title -->
+        <div class="card">
+          <div class="card-title">一、區塊標題設定</div>
+          <div class="max-w-sm">
+            <label class="form-label">區塊標題</label>
+            <input id="productSectionTitle" class="form-input" type="text"
+                   placeholder="商品推薦" value="販售商品" />
+            <p class="form-note">預設「商品推薦」，可依需求修改，例如：熱銷排行、新上市、主打優惠。</p>
+          </div>
+        </div>
+
+        <!-- Product spec info -->
+        <div class="card bg-blue-50 border-blue-100 mb-5">
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div class="info-row"><span class="info-icon">🖼</span><div class="info-text">商品圖片：<strong>413 × 300 px</strong>，JPG/PNG</div></div>
+            <div class="info-row"><span class="info-icon">📝</span><div class="info-text">商品標題：<strong>20 字以內</strong></div></div>
+            <div class="info-row"><span class="info-icon">💰</span><div class="info-text">若未填寫金額，顯示「<strong>洽店家</strong>」</div></div>
+          </div>
+        </div>
+
+        <!-- Product list -->
+        <div class="card">
+          <div class="card-title">
+            二、商品列表
+            <span class="spec-badge" id="productCount">0 項</span>
+          </div>
+          <div id="productList" class="grid grid-cols-4 gap-4"></div>
+          <p id="productEmpty" class="text-center text-gray-400 text-sm py-8">尚未新增商品，點擊右上角「新增商品」開始建立。</p>
+        </div>
+      </div>
+
+      <!-- ════════ PANEL E：文章區塊 ════════ -->
+      <div id="articlePanel" class="panel">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span class="section-badge">E</span> 文章區塊（最新消息）
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">發布活動消息、優惠公告，強化品牌形象並延伸流量。</p>
+          </div>
+          <button class="btn-primary flex items-center gap-2" onclick="openArticleModal()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            新增文章
+          </button>
+        </div>
+
+        <!-- Section title -->
+        <div class="card">
+          <div class="card-title">一、區塊標題設定</div>
+          <div class="max-w-sm">
+            <label class="form-label">區塊標題</label>
+            <input id="articleSectionTitle" class="form-input" type="text"
+                   value="最新消息" placeholder="最新消息" />
+            <p class="form-note">可自訂為：最新消息、活動優惠、最新活動、內部公告等。</p>
+          </div>
+        </div>
+
+        <!-- Article spec -->
+        <div class="card bg-blue-50 border-blue-100 mb-5">
+          <div class="grid grid-cols-4 gap-4 text-sm">
+            <div class="info-row"><span class="info-icon">🖼</span><div class="info-text">主圖：<strong>413 × 300 px</strong></div></div>
+            <div class="info-row"><span class="info-icon">📝</span><div class="info-text">標題：<strong>30 字以內</strong></div></div>
+            <div class="info-row"><span class="info-icon">📄</span><div class="info-text">內文：<strong>1,000 字以內</strong></div></div>
+            <div class="info-row"><span class="info-icon">🔗</span><div class="info-text">支援<strong>外部連結</strong></div></div>
+          </div>
+        </div>
+
+        <!-- Article list -->
+        <div class="card">
+          <div class="card-title">
+            二、文章列表
+            <span class="spec-badge" id="articleCount">0 篇</span>
+          </div>
+          <div id="articleList" class="space-y-3"></div>
+          <p id="articleEmpty" class="text-center text-gray-400 text-sm py-8">尚未新增文章，點擊右上角「新增文章」開始建立。</p>
+        </div>
+      </div>
+
+    </div><!-- /panels wrapper -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ════════════════════════════════════════
+     MODAL：商品新增 / 編輯
+════════════════════════════════════════ -->
+<div id="productModal" class="modal-overlay" onclick="closeProductModalBg(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-bold text-gray-900" id="productModalTitle">新增商品</h3>
+      <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+    </div>
+
+    <input type="hidden" id="productEditId" value="" />
+
+    <!-- Image upload -->
+    <div class="mb-4">
+      <label class="form-label">商品圖片 <span class="required-badge">必填</span></label>
+      <div id="productImgPreview" class="upload-zone mb-2" onclick="document.getElementById('productImgInput').click()" style="height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-3xl mb-1">🖼</div>
+        <p class="text-sm text-gray-500">點擊上傳商品圖片</p>
+        <p class="text-xs text-gray-400 mt-1">413 × 300 px，JPG / PNG</p>
+      </div>
+      <input type="file" id="productImgInput" accept="image/*" class="hidden" onchange="previewProductImg(event)" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="form-label">商品名稱 <span class="required-badge">必填</span></label>
+        <input id="productName" class="form-input" type="text" placeholder="最多 20 字" maxlength="20" />
+        <p class="form-note"><span id="productNameCount">0</span> / 20 字</p>
+      </div>
+      <div>
+        <label class="form-label">商品標籤 <span class="spec-badge">選填</span></label>
+        <input id="productTag" class="form-input" type="text" placeholder="人氣、精選、限定…" maxlength="6" />
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">商品金額（NT$）<span class="spec-badge">選填</span></label>
+      <input id="productPrice" class="form-input" type="number" placeholder="留空則顯示「洽店家」" min="0" />
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4 border-t">
+      <button class="btn-secondary" onclick="closeProductModal()">取消</button>
+      <button class="btn-primary" onclick="saveProduct()">確認儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL：文章新增 / 編輯
+════════════════════════════════════════ -->
+<div id="articleModal" class="modal-overlay" onclick="closeArticleModalBg(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-bold text-gray-900" id="articleModalTitle">新增文章</h3>
+      <button onclick="closeArticleModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+    </div>
+
+    <input type="hidden" id="articleEditId" value="" />
+
+    <!-- Image -->
+    <div class="mb-4">
+      <label class="form-label">文章主圖 <span class="required-badge">必填</span></label>
+      <div id="articleImgPreview" class="upload-zone mb-2" onclick="document.getElementById('articleImgInput').click()" style="height:140px;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-3xl mb-1">📰</div>
+        <p class="text-sm text-gray-500">點擊上傳文章主圖</p>
+        <p class="text-xs text-gray-400 mt-1">413 × 300 px，JPG / PNG</p>
+      </div>
+      <input type="file" id="articleImgInput" accept="image/*" class="hidden" onchange="previewArticleImg(event)" />
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">文章標題 <span class="required-badge">必填</span></label>
+      <input id="articleTitle" class="form-input" type="text" placeholder="最多 30 字" maxlength="30" />
+      <p class="form-note"><span id="articleTitleCount">0</span> / 30 字</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="form-label">分類標籤 <span class="spec-badge">選填</span></label>
+        <select id="articleTag" class="form-input">
+          <option value="活動">活動</option>
+          <option value="優惠">優惠</option>
+          <option value="公告">公告</option>
+          <option value="徵才">徵才</option>
+          <option value="推薦">推薦</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">發布日期 <span class="required-badge">必填</span></label>
+        <input id="articleDate" class="form-input" type="date" />
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">文章內容 <span class="required-badge">必填</span></label>
+      <textarea id="articleContent" class="form-input" rows="6"
+                placeholder="最多 1,000 字。可插入外部連結（如：活動頁、購物頁、公司官網）" maxlength="1000"></textarea>
+      <p class="form-note"><span id="articleContentCount">0</span> / 1,000 字</p>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">外部連結 <span class="spec-badge">選填</span></label>
+      <input id="articleLink" class="form-input" type="url" placeholder="https://" />
+      <p class="form-note">可連結到活動頁、購物頁、公司官網等，前台「更多」按鈕將導向此連結。</p>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4 border-t">
+      <button class="btn-secondary" onclick="closeArticleModal()">取消</button>
+      <button class="btn-primary" onclick="saveArticle()">確認發布</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script>
+// ── State ───────────────────────────────────
+const state = {
+  heroImages: [],
+  products: [],
+  articles: [],
+  editingProductId: null,
+  editingArticleId: null,
+};
+
+// ── Panel switching ─────────────────────────
+const panelTitles = {
+  heroPanel: '主視覺輪播',
+  ctaPanel: '互動按鈕區',
+  infoPanel: '店家資訊',
+  productPanel: '商品區塊',
+  articlePanel: '文章區塊',
+};
+function switchPanel(navEl) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  navEl.classList.add('active');
+  const panelId = navEl.dataset.panel;
+  document.getElementById(panelId).classList.add('active');
+  document.getElementById('breadcrumb-current').textContent = panelTitles[panelId] || panelId;
+}
+
+// ── Toast ────────────────────────────────────
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Image helpers ─────────────────────────────
+function readFile(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function compressImage(dataUrl, maxW = 1200, quality = 0.78) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(maxW / img.width, 1);
+      const c = document.createElement('canvas');
+      c.width  = Math.round(img.width  * ratio);
+      c.height = Math.round(img.height * ratio);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
+// ── Collect hours ──────────────────────────────
+function collectHours() {
+  return Array.from(document.querySelectorAll('#hoursContainer .hours-row')).map(row => {
+    const [d, t] = row.querySelectorAll('input');
+    return { day: d?.value || '', time: t?.value || '' };
+  });
+}
+
+// ── Load from localStorage ────────────────────
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('hotelData');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+
+    // B
+    if (d.brandName) document.getElementById('brandName').value = d.brandName;
+    if (d.cta) {
+      if (d.cta.text)  document.getElementById('ctaText').value = d.cta.text;
+      if (d.cta.url)   document.getElementById('ctaUrl').value  = d.cta.url;
+      if (d.cta.color) {
+        const sw = document.querySelector(`.swatch[data-color="${d.cta.color}"]`);
+        if (sw) { document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected')); sw.classList.add('selected'); }
+      }
+    }
+    if (d.fb) document.getElementById('fbUrl').value = d.fb;
+    if (d.ig) document.getElementById('igUrl').value = d.ig;
+
+    // A
+    if (d.hero) {
+      if (d.hero.images?.length) { state.heroImages = d.hero.images; renderHeroGrid(); }
+      ['textEn','textZh','textDesc','badgeL','badgeR'].forEach(k => {
+        if (d.hero[k]) document.getElementById('hero' + k.charAt(0).toUpperCase() + k.slice(1)).value = d.hero[k];
+      });
+    }
+
+    // C
+    if (d.info) {
+      if (d.info.todayStatus) document.getElementById('todayStatus').value = d.info.todayStatus;
+      if (d.info.todayTime)   document.getElementById('todayCloseTime').value = d.info.todayTime;
+      if (d.info.hours?.length) {
+        defaultHours.length = 0;
+        d.info.hours.forEach(h => defaultHours.push(h));
+        renderHours();
+      }
+    }
+
+    // D
+    if (d.products) {
+      if (d.products.title) document.getElementById('productSectionTitle').value = d.products.title;
+      if (d.products.items?.length) { state.products = d.products.items; renderProducts(); }
+    }
+
+    // E
+    if (d.articles) {
+      if (d.articles.title) document.getElementById('articleSectionTitle').value = d.articles.title;
+      if (d.articles.items?.length) { state.articles = d.articles.items; renderArticles(); }
+    }
+
+    updateCtaPreview();
+    showToast('📂 已載入上次儲存的設定', 2000);
+  } catch(e) { console.error('loadFromStorage:', e); }
+}
+
+// ── Save to localStorage ──────────────────────
+async function saveAll() {
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.textContent = '儲存中…';
+  saveBtn.disabled = true;
+  try {
+    const data = {
+      v: 1,
+      brandName: document.getElementById('brandName').value,
+      cta: {
+        text:  document.getElementById('ctaText').value,
+        url:   document.getElementById('ctaUrl').value,
+        color: document.querySelector('.swatch.selected')?.dataset.color ||
+               document.getElementById('ctaColorCustom')?.value || '#CC0000',
+      },
+      fb: document.getElementById('fbUrl').value,
+      ig: document.getElementById('igUrl').value,
+      hero: {
+        images:   state.heroImages,
+        textEn:   document.getElementById('heroTextEn').value,
+        textZh:   document.getElementById('heroTextZh').value,
+        textDesc: document.getElementById('heroTextDesc').value,
+        badgeL:   document.getElementById('heroBadgeL').value,
+        badgeR:   document.getElementById('heroBadgeR').value,
+      },
+      info: {
+        todayStatus: document.getElementById('todayStatus').value,
+        todayTime:   document.getElementById('todayCloseTime').value,
+        hours:       collectHours(),
+      },
+      products: {
+        title: document.getElementById('productSectionTitle').value,
+        items: state.products,
+      },
+      articles: {
+        title: document.getElementById('articleSectionTitle').value,
+        items: state.articles,
+      },
+    };
+    localStorage.setItem('hotelData', JSON.stringify(data));
+    showToast('✅ 儲存成功！請重新整理前台頁面查看效果', 3000);
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') showToast('⚠ 儲存空間不足，請減少圖片數量', 4000);
+    else showToast('❌ 儲存失敗：' + e.message, 4000);
+  } finally {
+    saveBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> 儲存設定';
+    saveBtn.disabled = false;
+  }
+}
+
+// ── CTA Color Swatch ─────────────────────────
+function selectSwatch(el) {
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  const color = el.dataset.color;
+  document.getElementById('ctaCustomColor').value = color;
+  updateCtaPreview();
+}
+function updateCtaPreview() {
+  const text  = document.getElementById('ctaText').value || '按鈕文字';
+  const color = document.querySelector('.swatch.selected')?.dataset.color ||
+                document.getElementById('ctaColorCustom')?.value ||
+                document.getElementById('ctaCustomColor')?.value || '#CC0000';
+  const btn = document.getElementById('ctaPreviewBtn');
+  btn.textContent = text;
+  btn.style.background = color;
+}
+document.getElementById('ctaText')?.addEventListener('input', updateCtaPreview);
+document.getElementById('ctaColorCustom')?.addEventListener('input', updateCtaPreview);
+
+// ── Hero images ──────────────────────────────
+async function handleHeroUpload(e) {
+  const files = Array.from(e.target.files);
+  for (const file of files) {
+    if (state.heroImages.length >= 5) { showToast('⚠ 最多上傳 5 張圖片'); break; }
+    const raw  = await readFile(file);
+    const src  = await compressImage(raw, 1920, 0.8);
+    state.heroImages.push({ id: Date.now() + Math.random(), src, name: file.name });
+    renderHeroGrid();
+  }
+  e.target.value = '';
+}
+function renderHeroGrid() {
+  const grid = document.getElementById('heroGrid');
+  document.getElementById('heroCount').textContent = `${state.heroImages.length} / 5 張`;
+  document.getElementById('heroUploadZone').style.display = state.heroImages.length >= 5 ? 'none' : '';
+  grid.innerHTML = state.heroImages.map((img, i) => `
+    <div class="img-card">
+      <img src="${img.src}" alt="Banner ${i+1}" />
+      <div class="img-actions">
+        ${i > 0 ? `<button class="img-btn img-btn-move" onclick="moveHero(${i},-1)" title="上移">↑</button>` : ''}
+        ${i < state.heroImages.length-1 ? `<button class="img-btn img-btn-move" onclick="moveHero(${i},1)" title="下移">↓</button>` : ''}
+        <button class="img-btn img-btn-del" onclick="removeHero(${i})" title="刪除">✕</button>
+      </div>
+      <div style="position:absolute;bottom:6px;left:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:4px">
+        第 ${i+1} 張
+      </div>
+    </div>
+  `).join('');
+}
+function removeHero(idx) {
+  state.heroImages.splice(idx, 1);
+  renderHeroGrid();
+}
+function moveHero(idx, dir) {
+  const tmp = state.heroImages[idx];
+  state.heroImages[idx] = state.heroImages[idx + dir];
+  state.heroImages[idx + dir] = tmp;
+  renderHeroGrid();
+}
+
+// ── Business hours ───────────────────────────
+const defaultHours = [
+  { day:'星期一 ~ 四', time:'上午 11:00 - 下午 8:30' },
+  { day:'星期五',      time:'上午 11:00 - 下午 8:30' },
+  { day:'星期六',      time:'上午 10:00 - 下午 9:00' },
+  { day:'星期日',      time:'公休' },
+];
+function renderHours() {
+  const container = document.getElementById('hoursContainer');
+  container.innerHTML = defaultHours.map((h, i) => `
+    <div class="hours-row" id="hoursRow${i}">
+      <input class="form-input text-sm" type="text" value="${h.day}" placeholder="星期一 ~ 五" />
+      <input class="form-input text-sm" type="text" value="${h.time}" placeholder="09:00 - 18:00 或 公休" />
+      <button class="btn-danger text-xs px-2" onclick="removeHoursRow(${i})">刪除</button>
+    </div>
+  `).join('');
+}
+function addHoursRow() {
+  defaultHours.push({ day:'', time:'' });
+  renderHours();
+}
+function removeHoursRow(i) {
+  defaultHours.splice(i, 1);
+  renderHours();
+}
+
+// ── Products ─────────────────────────────────
+function openProductModal(id = null) {
+  state.editingProductId = id;
+  const modal = document.getElementById('productModal');
+  document.getElementById('productModalTitle').textContent = id ? '編輯商品' : '新增商品';
+  document.getElementById('productEditId').value = id || '';
+  // Reset
+  document.getElementById('productName').value = '';
+  document.getElementById('productTag').value = '';
+  document.getElementById('productPrice').value = '';
+  document.getElementById('productNameCount').textContent = '0';
+  const preview = document.getElementById('productImgPreview');
+  preview.innerHTML = `<div class="text-3xl mb-1">🖼</div><p class="text-sm text-gray-500">點擊上傳商品圖片</p><p class="text-xs text-gray-400 mt-1">413 × 300 px，JPG / PNG</p>`;
+  preview.style.background = '';
+  if (id) {
+    const p = state.products.find(x => x.id === id);
+    if (p) {
+      document.getElementById('productName').value = p.name;
+      document.getElementById('productTag').value = p.tag || '';
+      document.getElementById('productPrice').value = p.price || '';
+      document.getElementById('productNameCount').textContent = p.name.length;
+      if (p.img) {
+        preview.innerHTML = `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+      }
+    }
+  }
+  modal.classList.add('open');
+}
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('open');
+}
+function closeProductModalBg(e) {
+  if (e.target === document.getElementById('productModal')) closeProductModal();
+}
+function previewProductImg(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const preview = document.getElementById('productImgPreview');
+    preview.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+    preview._imgData = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveProduct() {
+  const name = document.getElementById('productName').value.trim();
+  if (!name) { showToast('⚠ 請填寫商品名稱'); return; }
+  const imgEl  = document.getElementById('productImgPreview');
+  const img    = imgEl._imgData || (state.products.find(x => x.id === state.editingProductId)?.img) || null;
+  const tag    = document.getElementById('productTag').value.trim();
+  const price  = document.getElementById('productPrice').value;
+  if (state.editingProductId) {
+    const p = state.products.find(x => x.id === state.editingProductId);
+    if (p) { p.name = name; p.tag = tag; p.price = price ? Number(price) : null; if (img) p.img = img; }
+  } else {
+    state.products.push({ id: Date.now(), name, tag, price: price ? Number(price) : null, img });
+  }
+  renderProducts();
+  closeProductModal();
+  showToast('✅ 商品已儲存');
+}
+function deleteProduct(id) {
+  state.products = state.products.filter(x => x.id !== id);
+  renderProducts();
+  showToast('🗑 商品已刪除');
+}
+function renderProducts() {
+  const list = document.getElementById('productList');
+  const empty = document.getElementById('productEmpty');
+  document.getElementById('productCount').textContent = `${state.products.length} 項`;
+  if (!state.products.length) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = state.products.map(p => `
+    <div class="prod-card">
+      <div style="aspect-ratio:4/3;background:#f5f5f5;overflow:hidden">
+        ${p.img ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover" />` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:2rem">🖼</div>`}
+      </div>
+      <div class="p-3">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs px-2 py-0.5 rounded-full font-bold" style="background:#fff0f0;color:#cc0000">${p.tag || '商品'}</span>
+        </div>
+        <p class="text-sm font-medium text-gray-800 leading-snug">${p.name}</p>
+        <p class="text-sm font-bold mt-0.5" style="color:#CC0000">${p.price ? 'NT$ ' + p.price.toLocaleString() : '洽店家'}</p>
+        <div class="flex gap-2 mt-2">
+          <button class="btn-secondary text-xs flex-1" onclick="openProductModal(${p.id})">編輯</button>
+          <button class="btn-danger text-xs" onclick="deleteProduct(${p.id})">刪除</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Articles ─────────────────────────────────
+function openArticleModal(id = null) {
+  state.editingArticleId = id;
+  document.getElementById('articleModalTitle').textContent = id ? '編輯文章' : '新增文章';
+  document.getElementById('articleEditId').value = id || '';
+  document.getElementById('articleTitle').value = '';
+  document.getElementById('articleContent').value = '';
+  document.getElementById('articleLink').value = '';
+  document.getElementById('articleTitleCount').textContent = '0';
+  document.getElementById('articleContentCount').textContent = '0';
+  document.getElementById('articleDate').value = new Date().toISOString().slice(0,10);
+  const preview = document.getElementById('articleImgPreview');
+  preview.innerHTML = `<div class="text-3xl mb-1">📰</div><p class="text-sm text-gray-500">點擊上傳文章主圖</p><p class="text-xs text-gray-400 mt-1">413 × 300 px，JPG / PNG</p>`;
+  if (id) {
+    const a = state.articles.find(x => x.id === id);
+    if (a) {
+      document.getElementById('articleTitle').value = a.title;
+      document.getElementById('articleContent').value = a.content;
+      document.getElementById('articleLink').value = a.link || '';
+      document.getElementById('articleDate').value = a.date;
+      document.getElementById('articleTag').value = a.tag || '活動';
+      document.getElementById('articleTitleCount').textContent = a.title.length;
+      document.getElementById('articleContentCount').textContent = a.content.length;
+      if (a.img) preview.innerHTML = `<img src="${a.img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+    }
+  }
+  document.getElementById('articleModal').classList.add('open');
+}
+function closeArticleModal() {
+  document.getElementById('articleModal').classList.remove('open');
+}
+function closeArticleModalBg(e) {
+  if (e.target === document.getElementById('articleModal')) closeArticleModal();
+}
+function previewArticleImg(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const preview = document.getElementById('articleImgPreview');
+    preview.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+    preview._imgData = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveArticle() {
+  const title = document.getElementById('articleTitle').value.trim();
+  const content = document.getElementById('articleContent').value.trim();
+  if (!title) { showToast('⚠ 請填寫文章標題'); return; }
+  if (!content) { showToast('⚠ 請填寫文章內容'); return; }
+  const imgEl   = document.getElementById('articleImgPreview');
+  const img     = imgEl._imgData || (state.articles.find(x => x.id === state.editingArticleId)?.img) || null;
+  const tag     = document.getElementById('articleTag').value;
+  const date    = document.getElementById('articleDate').value;
+  const link    = document.getElementById('articleLink').value.trim();
+  const preview = content.slice(0, 80) + (content.length > 80 ? '…' : '');
+  if (state.editingArticleId) {
+    const a = state.articles.find(x => x.id === state.editingArticleId);
+    if (a) { a.title = title; a.content = content; a.preview = preview; a.tag = tag; a.date = date; a.link = link; if (img) a.img = img; }
+  } else {
+    state.articles.unshift({ id: Date.now(), title, content, preview, tag, date, link, img });
+  }
+  renderArticles();
+  closeArticleModal();
+  showToast('✅ 文章已發布');
+}
+function deleteArticle(id) {
+  state.articles = state.articles.filter(x => x.id !== id);
+  renderArticles();
+  showToast('🗑 文章已刪除');
+}
+function renderArticles() {
+  const list  = document.getElementById('articleList');
+  const empty = document.getElementById('articleEmpty');
+  document.getElementById('articleCount').textContent = `${state.articles.length} 篇`;
+  if (!state.articles.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const tagColors = { '活動':'bg-red-50 text-red-600', '優惠':'bg-orange-50 text-orange-600', '公告':'bg-blue-50 text-blue-600', '徵才':'bg-purple-50 text-purple-600', '推薦':'bg-green-50 text-green-600' };
+  list.innerHTML = state.articles.map(a => `
+    <div class="article-card">
+      <div style="width:120px;height:80px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#f5f5f5">
+        ${a.img ? `<img src="${a.img}" style="width:100%;height:100%;object-fit:cover" />` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:1.5rem">📰</div>`}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs font-bold px-2 py-0.5 rounded ${tagColors[a.tag] || 'bg-gray-100 text-gray-600'}">${a.tag}</span>
+          <span class="text-xs text-gray-400">${a.date}</span>
+        </div>
+        <p class="text-sm font-bold text-gray-900 leading-snug">${a.title}</p>
+        <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">${a.preview || a.content || ''}</p>
+      </div>
+      <div class="flex flex-col gap-2 ml-3 shrink-0">
+        <button class="btn-secondary text-xs" onclick="openArticleModal(${a.id})">編輯</button>
+        <button class="btn-danger text-xs" onclick="deleteArticle(${a.id})">刪除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Character counters ───────────────────────
+document.getElementById('productName')?.addEventListener('input', e => {
+  document.getElementById('productNameCount').textContent = e.target.value.length;
+});
+document.getElementById('articleTitle')?.addEventListener('input', e => {
+  document.getElementById('articleTitleCount').textContent = e.target.value.length;
+});
+document.getElementById('articleContent')?.addEventListener('input', e => {
+  document.getElementById('articleContentCount').textContent = e.target.value.length;
+});
+
+// ── Init ─────────────────────────────────────
+loadFromStorage();
+renderHeroGrid();
+renderHours();
+renderProducts();
+renderArticles();
+</script>
+</body>
+</html>
