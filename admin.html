@@ -787,12 +787,15 @@ function collectHours() {
   });
 }
 
-// ── Load from localStorage ────────────────────
-function loadFromStorage() {
+// ── Firebase config ───────────────────────────
+const FIREBASE_URL = 'https://ai-project-b8885-default-rtdb.firebaseio.com/hotelData.json';
+
+// ── Load from Firebase ────────────────────────
+async function loadFromStorage() {
   try {
-    const raw = localStorage.getItem('hotelData');
-    if (!raw) return;
-    const d = JSON.parse(raw);
+    const res = await fetch(FIREBASE_URL);
+    const d = await res.json();
+    if (!d) return;
 
     // B
     if (d.brandName) document.getElementById('brandName').value = d.brandName;
@@ -839,7 +842,7 @@ function loadFromStorage() {
     }
 
     updateCtaPreview();
-    showToast('📂 已載入上次儲存的設定', 2000);
+    showToast('📂 已載入雲端設定', 2000);
   } catch(e) { console.error('loadFromStorage:', e); }
 }
 
@@ -882,11 +885,15 @@ async function saveAll() {
         items: state.articles,
       },
     };
-    localStorage.setItem('hotelData', JSON.stringify(data));
-    showToast('✅ 儲存成功！請重新整理前台頁面查看效果', 3000);
+    const res = await fetch(FIREBASE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    showToast('✅ 已儲存至雲端，前台即時更新', 3000);
   } catch(e) {
-    if (e.name === 'QuotaExceededError') showToast('⚠ 儲存空間不足，請減少圖片數量', 4000);
-    else showToast('❌ 儲存失敗：' + e.message, 4000);
+    showToast('❌ 儲存失敗：' + e.message, 4000);
   } finally {
     saveBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> 儲存設定';
     saveBtn.disabled = false;
@@ -1188,7 +1195,7 @@ document.getElementById('articleContent')?.addEventListener('input', e => {
 });
 
 // ── Init ─────────────────────────────────────
-loadFromStorage();
+loadFromStorage();   // async — loads from Firebase
 renderHeroGrid();
 renderHours();
 renderProducts();

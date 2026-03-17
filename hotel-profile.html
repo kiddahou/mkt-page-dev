@@ -489,6 +489,9 @@
      SCRIPTS
 ════════════════════════════════════════════ -->
 <script>
+// ── Firebase config ───────────────────────────
+const FIREBASE_URL = 'https://ai-project-b8885-default-rtdb.firebaseio.com/hotelData.json';
+
 // ── Default data (fallback when no admin data saved) ──
 const hotel = {
   products: [
@@ -525,105 +528,15 @@ function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Load from localStorage & apply to DOM ─────
-function loadAndRender() {
+// ── Load from Firebase & apply to DOM ──────────
+async function loadAndRender() {
   let d = null;
   try {
-    const raw = localStorage.getItem('hotelData');
-    if (raw) d = JSON.parse(raw);
+    const res = await fetch(FIREBASE_URL);
+    d = await res.json();
   } catch(e) {}
 
-  if (d) {
-    // ── Hero carousel images ──
-    if (d.hero?.images?.length) {
-      const track = document.getElementById('carouselTrack');
-      track.innerHTML = d.hero.images.map((img, i) => `
-        <div class="carousel-slide h-full">
-          <img src="${esc(img.src)}" class="w-full h-full object-cover" alt="飯店環境 ${i+1}" />
-        </div>`).join('');
-      const dotsC = document.getElementById('carouselDots');
-      dotsC.innerHTML = d.hero.images.map((_, i) =>
-        `<div class="dot${i === 0 ? ' active' : ''}"></div>`).join('');
-    }
-
-    // ── Hero overlay text ──
-    if (d.hero?.textEn)   document.getElementById('heroTextEn').textContent = d.hero.textEn;
-    if (d.hero?.textZh)   document.getElementById('heroTextZh').textContent = d.hero.textZh;
-    if (d.hero?.textDesc) {
-      const el = document.getElementById('heroTextDesc');
-      el.innerHTML = esc(d.hero.textDesc).replace(/\n/g, '<br>');
-    }
-    if (d.hero?.badgeL) document.getElementById('heroBadgeL').textContent = d.hero.badgeL;
-    if (d.hero?.badgeR) document.getElementById('heroBadgeR').textContent = d.hero.badgeR;
-
-    // ── Company name ──
-    if (d.brandName) document.getElementById('companyName').textContent = d.brandName;
-
-    // ── CTA / LINE button ──
-    const lineBtn = document.getElementById('lineBtn');
-    if (lineBtn && d.cta) {
-      if (d.cta.text)  document.getElementById('lineBtnText').textContent = d.cta.text;
-      if (d.cta.url)   lineBtn.href = d.cta.url;
-      if (d.cta.color) lineBtn.style.background = d.cta.color;
-    }
-
-    // ── Facebook ──
-    const fbBtn = document.getElementById('fbBtn');
-    if (fbBtn) {
-      if (d.fb) { fbBtn.href = d.fb; fbBtn.style.display = ''; }
-      else fbBtn.style.display = 'none';
-    }
-
-    // ── Instagram ──
-    const igBtn = document.getElementById('igBtn');
-    if (igBtn) {
-      if (d.ig) { igBtn.href = d.ig; igBtn.style.display = ''; }
-      else igBtn.style.display = 'none';
-    }
-
-    // ── Info: today status ──
-    if (d.info?.todayStatus) {
-      const el = document.getElementById('infoTodayStatus');
-      const map = { open:'今日營業中', closed:'今日公休', holiday:'假日營業中' };
-      el.textContent = map[d.info.todayStatus] || d.info.todayStatus;
-      el.className = 'text-sm font-medium mb-1 ' +
-        (d.info.todayStatus === 'closed' ? 'text-gray-400' : 'hours-open');
-    }
-
-    // ── Info: hours ──
-    if (d.info?.hours?.length) {
-      document.getElementById('infoHoursBody').innerHTML =
-        d.info.hours.map(h =>
-          `<p class="text-sm text-gray-600">${esc(h.day)}&nbsp;&nbsp;${esc(h.time)}</p>`
-        ).join('');
-    }
-
-    // ── Products section title ──
-    if (d.products?.title)
-      document.getElementById('productsSectionTitle').textContent = d.products.title;
-
-    // ── Products items (override defaults) ──
-    if (d.products?.items?.length) hotel.products = d.products.items;
-
-    // ── News section title ──
-    if (d.articles?.title)
-      document.getElementById('newsSectionTitle').textContent = d.articles.title;
-
-    // ── News items (override defaults) ──
-    if (d.articles?.items?.length) {
-      hotel.news = d.articles.items.map(a => ({
-        id:      a.id,
-        tag:     a.tag,
-        title:   a.title,
-        date:    (a.date || '').replace(/-/g, ' / '),
-        content: a.content || '',
-        img:     a.img || null,
-        link:    a.link || '#',
-      }));
-    }
-  }
-
-  // ── Render product + news grids ──
+  applyData(d);
   renderProducts();
   renderNews();
 }
@@ -783,8 +696,78 @@ function openArticle(idx) {
 }
 
 // ── Init ──────────────────────────────────────
-loadAndRender();   // reads localStorage, updates DOM, calls renderProducts + renderNews
-initCarousel();    // init after DOM is updated with dynamic slides
+loadAndRender().then(() => initCarousel());
+
+// ── Firebase 即時同步（EventSource SSE）─────────
+(function() {
+  const sseUrl = 'https://ai-project-b8885-default-rtdb.firebaseio.com/hotelData.json';
+  let es;
+  function connect() {
+    es = new EventSource(sseUrl);
+    es.addEventListener('put', e => {
+      try {
+        const payload = JSON.parse(e.data);
+        const d = payload.data;
+        if (!d) return;
+        // 重新套用資料到 DOM
+        applyData(d);
+      } catch(err) {}
+    });
+    es.onerror = () => { es.close(); setTimeout(connect, 5000); };
+  }
+  connect();
+})();
+
+// ── 將資料套用到 DOM（供 loadAndRender + SSE 共用）─
+function applyData(d) {
+  if (!d) return;
+  if (d.hero?.images?.length) {
+    const track = document.getElementById('carouselTrack');
+    track.innerHTML = d.hero.images.map((img, i) => `
+      <div class="carousel-slide h-full">
+        <img src="${esc(img.src)}" class="w-full h-full object-cover" alt="飯店環境 ${i+1}" />
+      </div>`).join('');
+    const dotsC = document.getElementById('carouselDots');
+    dotsC.innerHTML = d.hero.images.map((_, i) =>
+      `<div class="dot${i===0?' active':''}"></div>`).join('');
+  }
+  if (d.hero?.textEn)   document.getElementById('heroTextEn').textContent = d.hero.textEn;
+  if (d.hero?.textZh)   document.getElementById('heroTextZh').textContent = d.hero.textZh;
+  if (d.hero?.textDesc) document.getElementById('heroTextDesc').innerHTML = esc(d.hero.textDesc).replace(/\n/g,'<br>');
+  if (d.hero?.badgeL)   document.getElementById('heroBadgeL').textContent = d.hero.badgeL;
+  if (d.hero?.badgeR)   document.getElementById('heroBadgeR').textContent = d.hero.badgeR;
+  if (d.brandName)      document.getElementById('companyName').textContent = d.brandName;
+  const lineBtn = document.getElementById('lineBtn');
+  if (lineBtn && d.cta) {
+    if (d.cta.text)  document.getElementById('lineBtnText').textContent = d.cta.text;
+    if (d.cta.url)   lineBtn.href = d.cta.url;
+    if (d.cta.color) lineBtn.style.background = d.cta.color;
+  }
+  const fbBtn = document.getElementById('fbBtn');
+  if (fbBtn) { if (d.fb) { fbBtn.href = d.fb; fbBtn.style.display=''; } else fbBtn.style.display='none'; }
+  const igBtn = document.getElementById('igBtn');
+  if (igBtn) { if (d.ig) { igBtn.href = d.ig; igBtn.style.display=''; } else igBtn.style.display='none'; }
+  if (d.info?.todayStatus) {
+    const el = document.getElementById('infoTodayStatus');
+    const map = { open:'今日營業中', closed:'今日公休', holiday:'假日營業中' };
+    el.textContent = map[d.info.todayStatus] || d.info.todayStatus;
+    el.className = 'text-sm font-medium mb-1 ' + (d.info.todayStatus==='closed'?'text-gray-400':'hours-open');
+  }
+  if (d.info?.hours?.length)
+    document.getElementById('infoHoursBody').innerHTML =
+      d.info.hours.map(h=>`<p class="text-sm text-gray-600">${esc(h.day)}&nbsp;&nbsp;${esc(h.time)}</p>`).join('');
+  if (d.products?.title) document.getElementById('productsSectionTitle').textContent = d.products.title;
+  if (d.products?.items?.length) { hotel.products = d.products.items; renderProducts(); }
+  if (d.articles?.title) document.getElementById('newsSectionTitle').textContent = d.articles.title;
+  if (d.articles?.items?.length) {
+    hotel.news = d.articles.items.map(a => ({
+      id:a.id, tag:a.tag, title:a.title,
+      date:(a.date||'').replace(/-/g,' / '),
+      content:a.content||'', img:a.img||null, link:a.link||'#',
+    }));
+    renderNews();
+  }
+}
 </script>
 </body>
 </html>
